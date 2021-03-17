@@ -1,5 +1,5 @@
 import dice
-
+import battle_field
 
 class Action:
     def __init__(self, name: str, target: str, a_range: int):
@@ -10,8 +10,6 @@ class Action:
         self.a_range = a_range
 
 
-# class Move (Action):
-#     def __init__(self, name, line, column):
 
 
 

@@ -10,6 +10,7 @@ class Character:
         self.atk = atk
         self.defs = defs
         self.moves = moves
+        self.position = None
 
     def select_action(self):
         selected = False
