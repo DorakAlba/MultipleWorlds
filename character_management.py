@@ -20,11 +20,13 @@ class Character:
             move_names.append(element.name)
             moves_dict[element.name] = element
         while not selected:
-            selected_action = input(f"select you actions: {move_names} ")
+            selected_action = input(f"select you actions: {move_names} or wait ")
+            if selected_action.lower() == "wait":
+                return None
             if selected_action in move_names:
-                return moves_dict[selected_action]
+                move = moves_dict[selected_action]
+                return move
                 selected = True
-
 
 
 def create_character():

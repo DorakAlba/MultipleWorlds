@@ -6,7 +6,6 @@ class Field:
         :param height: of future field
         """
         self.battle_field = [[0 for x in range(width)] for y in range(height)]
-        self.display_field = [[0 for x in range(width)] for y in range(height)]
 
     def place_exist(self, line: int, column: int):
         """
@@ -37,7 +36,7 @@ class Field:
 
     def show_field(self):
         """
-        print current display_field for
+        display current field
         :arg"""
         display = ""
         for line in self.battle_field:
@@ -49,4 +48,14 @@ class Field:
             display += " | \n"
         print(display)
 
-    # def move(self, line: int, column: int):
+    def get_targets(self):
+        targets = {}
+        for line in range(len(self.battle_field)):
+            for column in range(len(self.battle_field[line])):
+                objective = self.battle_field[line][column]
+                if objective != 0:
+                    targets[objective.name] = objective
+        return targets
+# def move(self, line: int, column: int):
+# field = Field(5, 5)
+# field.get_targets()

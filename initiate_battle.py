@@ -1,12 +1,14 @@
 import character_management
 import actions
 from battle_field import Field
+from additional_functions import display_distance, calculate_range
 import random
 
-chain_blade = actions.Attack('chain_blade', 'you', 1, "4d3", 1, 2)
-sword = actions.Attack('sword', 'you', 1, "2d6", 2, 4)
-pike = actions.Attack('pike', 'you', 1, "1d12", 4, 6)
-goblin = character_management.Character("goblin", 20, 4, 15, [sword, chain_blade])
+chain_blade = actions.Attack('chain blade', 'you', [2, 3], "4d3", 1, 2)
+sword = actions.Attack('sword', 'you', [0, 1], "2d6", 2, 4)
+pike = actions.Attack('pike', 'you', [0, 2], "1d12", 4, 6)
+short_bow = actions.Attack('short bow', 'you', [5, 8], "1d8", 1, -2)
+goblin = character_management.Character("goblin", 20, 4, 15, [sword, chain_blade, short_bow])
 knoll = character_management.Character("knoll", 30, 4, 14, [sword, pike])
 field = Field(6, 6)
 
@@ -38,6 +40,7 @@ class Battle:
         while not selected:
             new_line = line
             new_column = column
+            self.field.show_field()
             print('select direction: ')
             direction = int(input('''            7 8 9
             4   6
@@ -51,10 +54,10 @@ class Battle:
                 new_line -= 1
             if direction == direction in [1, 2, 3]:
                 new_line += 1
-
-            if self.field.place_exist(new_line, new_column):
-                if self.field.unoccupied(new_line, new_column):
-                    selected = True
+            if new_column >= 0 and new_line >= 0:
+                if self.field.place_exist(new_line, new_column):
+                    if self.field.unoccupied(new_line, new_column):
+                        selected = True
         return [new_line, new_column]
 
     def same_direction(self, new_direction, old_direction):
@@ -79,7 +82,6 @@ class Battle:
         :param character: character that removed from field
         """
         self.battle_field[character.position[0]][character.position[1]] = 0
-        self.field.display_field[character.position[0]][character.position[1]] = 0
         character.position = None
 
     def new_position(self, character, new_position):
@@ -91,7 +93,6 @@ class Battle:
         """
         character.position = new_position
         self.battle_field[new_position[0]][new_position[1]] = character
-        self.field.display_field[new_position[0]][new_position[1]] = character.name[0]
 
     def move(self, character):
         """
@@ -118,7 +119,6 @@ class Battle:
             if self.field.unoccupied(line, column):
                 selected = True
                 self.battle_field[line][column] = character
-                self.field.display_field[line][column] = character.name[0]
                 character.position = [line, column]
 
     def end_battle(self):
@@ -138,7 +138,11 @@ class Battle:
         """
         print(f"{active_character.name} selecting action, he has {active_character.chp} HP")
         action = active_character.select_action()
-        return action.attack(target=target)
+        if action:
+            if action.action_in_range(calculate_range(active_character.position, target.position)):
+                action.attack(target=target)
+            else:
+                print ("You missed! ")
 
     def check_winner(self):
         """
@@ -158,10 +162,20 @@ class Battle:
     def battle_active(self):
         while not self.winner:
             self.move(self.character1)
+            targets = self.field.get_targets()
+            display_distance(self.character1, targets)
+
             self.character_act(self.character1, self.character2)
             self.move(self.character2)
             self.character_act(self.character2, self.character1)
             self.check_winner()
+
+    # def select_target(self, targets, character=None):
+    #     selected = False
+    #     while not selected:
+    #         if character == None:
+    #             selected = input(f"select target {targets.keys():  }")
+    #                 if selected in targets, keys
 
 
 Battle(goblin, knoll, field)

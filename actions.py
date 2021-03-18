@@ -1,17 +1,26 @@
 import dice
 import battle_field
 
+
 class Action:
-    def __init__(self, name: str, target: str, a_range: int):
+    def __init__(self, name: str, target: str, a_range: list):
         self.name = name
         # target "you" or "other"
         self.target = target
         # attack range
         self.a_range = a_range
 
-
-
-
+    def action_in_range(self, distance: int):
+        """
+        :param distance: distance between target and user
+        :param action: action
+        :return: True/False - suitable range or not
+        """
+        action_a_range = self.a_range
+        if action_a_range[0] <= distance <= action_a_range[1]:
+            return True
+        else:
+            return False
 
 
 class Attack(Action):
@@ -20,10 +29,6 @@ class Attack(Action):
         self.dmg_dice = dmg_dice
         self.dmg_flat = dmg_flat
         self.accuracy = accuracy
-
-
-
-
 
     def attack(self, target, aim=None):
         # roll d20 to hit
@@ -41,9 +46,5 @@ class Attack(Action):
 
         print(f"{target.name} has {target.chp} hp")
 
-
-
-
-# chain_blade = Attack('attack', 'you', 1, "4d3", 1, 2)
-# sword = Attack('attack', 'you', 1, "2d6", 2, 4)
-
+# chain_blade = Attack('attack', 'you', [2, 3], "4d3", 1, 2)
+# sword = Attack('attack', 'you',[1, 1], "2d6", 2, 4)
