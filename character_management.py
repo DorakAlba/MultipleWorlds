@@ -14,19 +14,30 @@ class Character:
 
     def select_action(self):
         selected = False
-        move_names = []
+        # move_names = []
+        move_names = ['wait']
         moves_dict = {}
         for element in self.moves:
             move_names.append(element.name)
             moves_dict[element.name] = element
         while not selected:
-            selected_action = input(f"select you actions: {move_names} or wait ")
-            if selected_action.lower() == "wait":
+            selected_action = int(input(f"select you actions: {move_names} "))
+
+            # if selected_action.lower() == "wait":
+            if selected_action == 0:
+                print(f"{self.name} waiting")
                 return None
-            if selected_action in move_names:
-                move = moves_dict[selected_action]
+            if selected_action in range(0, len(move_names)):
+
+                move = moves_dict[move_names[selected_action]]
+                print(f"{self.name} using {move.name}")
                 return move
                 selected = True
+
+            # if selected_action in move_names:
+            #     move = moves_dict[selected_action]
+            #     return move
+            #     selected = True
 
 
 def create_character():

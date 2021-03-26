@@ -142,7 +142,7 @@ class Battle:
             if action.action_in_range(calculate_range(active_character.position, target.position)):
                 action.attack(target=target)
             else:
-                print ("You missed! ")
+                print (f"{active_character.name} missed! ")
 
     def check_winner(self):
         """
