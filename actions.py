@@ -1,5 +1,6 @@
 import dice
 import battle_field
+from constants import RANDOM, SIMULATION
 
 
 class Action:
@@ -34,17 +35,20 @@ class Attack(Action):
         # roll d20 to hit
         rolled = dice.roll("1d20")[0]
         chance_to_hit = int(((21 - (target.defs - self.accuracy)) / 20) * 100)
-        print(f"Probability to hit {chance_to_hit}%")
-        print(f"{target.defs} vs {rolled} + {self.accuracy}")
+        if not SIMULATION:
+            print(f"Probability to hit {chance_to_hit}%")
+            print(f"{target.defs} vs {rolled} + {self.accuracy}")
 
         if rolled + self.accuracy >= target.defs:
             dmg = sum(dice.roll(self.dmg_dice)) + self.dmg_flat
             target.chp -= dmg
-            print(f"You deal {dmg} dmg to {target.name}.")
+            if not SIMULATION:
+                print(f"You deal {dmg} dmg to {target.name}.")
         else:
-            print("You missed")
-
-        print(f"{target.name} has {target.chp} hp")
+            if not SIMULATION:
+                print("You missed")
+        if not SIMULATION:
+            print(f"{target.name} has {target.chp} hp")
 
 # chain_blade = Attack('attack', 'you', [2, 3], "4d3", 1, 2)
 # sword = Attack('attack', 'you',[1, 1], "2d6", 2, 4)

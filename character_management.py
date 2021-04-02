@@ -1,5 +1,7 @@
 import pickle
 import actions
+import random
+from constants import RANDOM, SIMULATION
 
 
 class Character:
@@ -12,25 +14,29 @@ class Character:
         self.moves = moves
         self.position = None
 
-    def select_action(self):
+    def select_action(self, distance =0):
         selected = False
         # move_names = []
         move_names = ['wait']
         moves_dict = {}
         for element in self.moves:
-            move_names.append(element.name)
-            moves_dict[element.name] = element
+            if element.action_in_range(distance):
+                move_names.append(element.name)
+                moves_dict[element.name] = element
         while not selected:
-            selected_action = int(input(f"select you actions: {move_names} "))
-
+            if not RANDOM:
+                selected_action = int(input(f"select you actions: {move_names} "))
+            else:
+                selected_action = random.randint(0, len(move_names))
             # if selected_action.lower() == "wait":
             if selected_action == 0:
-                print(f"{self.name} waiting")
+                if not SIMULATION:
+                    print(f"{self.name} waiting")
                 return None
             if selected_action in range(0, len(move_names)):
-
                 move = moves_dict[move_names[selected_action]]
-                print(f"{self.name} using {move.name}")
+                if not SIMULATION:
+                    print(f"{self.name} using {move.name}")
                 return move
                 selected = True
 

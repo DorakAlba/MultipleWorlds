@@ -1,3 +1,5 @@
+from constants import RANDOM, SIMULATION
+
 class Field:
     def __init__(self, width: int, height: int):
         """

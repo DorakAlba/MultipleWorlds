@@ -1,6 +1,6 @@
 import numpy as np
 from collections import defaultdict
-
+from initiate_battle import Battle
 
 def main():
     """initialize root node"""
@@ -76,8 +76,7 @@ class MonteCarloTreeSearchNode:
     def backpropagate(self, result):
         """
         All statistics updated through all traveled nodes
-        """
-        self._number_of_visits += 1.
+        """        self._number_of_visits += 1.
         self._results[result] += 1.
         if self.parent:
             self.parent.backpropagate(result)
@@ -113,7 +112,6 @@ class MonteCarloTreeSearchNode:
         """
         current_node = self
         while not current_node.is_terminal_node():
-
             if not current_node.is_fully_expanded():
                 return current_node.expand()
             else:
