@@ -31,23 +31,23 @@ class Attack(Action):
         self.dmg_flat = dmg_flat
         self.accuracy = accuracy
 
-    def attack(self, target, aim=None):
+    def attack(self, target, aim=None, show_action=False):
         # roll d20 to hit
         rolled = dice.roll("1d20")[0]
         chance_to_hit = int(((21 - (target.defs - self.accuracy)) / 20) * 100)
-        if not SIMULATION:
+        if not SIMULATION or show_action:
             print(f"Probability to hit {chance_to_hit}%")
             print(f"{target.defs} vs {rolled} + {self.accuracy}")
 
         if rolled + self.accuracy >= target.defs:
             dmg = sum(dice.roll(self.dmg_dice)) + self.dmg_flat
             target.chp -= dmg
-            if not SIMULATION:
+            if not SIMULATION or show_action:
                 print(f"You deal {dmg} dmg to {target.name}.")
         else:
-            if not SIMULATION:
+            if not SIMULATION or show_action:
                 print("You missed")
-        if not SIMULATION:
+        if not SIMULATION or show_action:
             print(f"{target.name} has {target.chp} hp")
 
 # chain_blade = Attack('attack', 'you', [2, 3], "4d3", 1, 2)

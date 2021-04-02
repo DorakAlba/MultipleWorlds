@@ -23,11 +23,16 @@ class Character:
             if element.action_in_range(distance):
                 move_names.append(element.name)
                 moves_dict[element.name] = element
+        # if not move_names:
+        #     move_names.append('wait')
         while not selected:
             if not RANDOM:
                 selected_action = int(input(f"select you actions: {move_names} "))
             else:
-                selected_action = random.randint(0, len(move_names))
+                if len(move_names) > 1:
+                    selected_action = random.randint(1, len(move_names))
+                else:
+                    selected_action = random.randint(0, len(move_names))
             # if selected_action.lower() == "wait":
             if selected_action == 0:
                 if not SIMULATION:

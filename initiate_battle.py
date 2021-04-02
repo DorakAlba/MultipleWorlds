@@ -6,6 +6,7 @@ import copy
 import collections
 from battle_field import Field
 from additional_functions import display_distance, calculate_range
+from running_simmulations import select_best_action, add_to_counter
 from constants import RANDOM, SIMULATION
 
 chain_blade = actions.Attack('chain blade', 'you', [2, 3], "4d3", 1, 2)
@@ -17,6 +18,7 @@ short_bow = actions.Attack('short bow', 'you', [5, 8], "1d8", 1, -2)
 class Battle:
     def __init__(self, character1, character2, field, old=False, acting_character: int = 1):
         self.winner = False
+        self.show_actions = False
         # self.character1 = character_management.load_character(character_name1)
         # self.character2 = character_management.load_character(character_name2)
         self.character1 = character1
@@ -169,14 +171,21 @@ class Battle:
             action = determind_action[1]
         if action:
             if action.action_in_range(calculate_range(active_character.position, target.position)):
-                action.attack(target=target)
+                action.attack(target=target, show_action=self.show_actions)
             else:
                 if not SIMULATION:
                     print(f"{active_character.name} missed! ")
 
     def end_game_display(self):
-        # print(self.steps)
-        # self.field.show_field()
+        None
+
+    # print(self.steps)
+    # self.field.show_field()
+    # print(f'{self.character1.name} {self.character1.chp} hp  vs {self.character2.name} {self.character2.chp} hp ')
+
+    def display(self):
+        print(self.steps)
+        self.field.show_field()
         print(f'{self.character1.name} {self.character1.chp} hp  vs {self.character2.name} {self.character2.chp} hp ')
 
     def check_winner(self):
@@ -185,15 +194,18 @@ class Battle:
         :return:
         """
         if self.character1.chp <= 0 and self.character2.chp <= 0:
-            print("Draw")
+            if not SIMULATION:
+                print("Draw")
             self.winner_t = 0
             return self.end_battle()
         elif self.character1.chp <= 0:
-            print("Character 2 Won!")
+            if not SIMULATION:
+                print("Character 2 Won!")
             self.winner_t = 2
             return self.end_battle()
         elif self.character2.chp <= 0:
-            print("Character 1 Won!")
+            if not SIMULATION:
+                print("Character 1 Won!")
             self.winner_t = 1
             return self.end_battle()
 
@@ -218,6 +230,8 @@ class Battle:
 
     def character_turn(self, acting, determined=False, determined_action=None):
         self.last_acting = acting
+        if determined_action:
+            self.show_actions = True
         if acting == 1:
             actor = self.character1
             target = self.character2
@@ -226,14 +240,8 @@ class Battle:
             target = self.character1
         self.move(actor, True, determined, determined_action)
         self.character_act(actor, target, True, determined, determined_action)
+        self.show_actions = False
         self.check_winner()
-
-    # def select_target(self, targets, character=None):
-    #     selected = False
-    #     while not selected:
-    #         if character == None:
-    #             selected = input(f"select target {targets.keys():  }")
-    #                 if selected in targets, keys
 
 
 def run_simmulation(iterations):
@@ -242,7 +250,7 @@ def run_simmulation(iterations):
     winners = {0: 0, 1: 0, 2: 0}
     goblin = character_management.Character("goblin", 20, 4, 15, [sword, chain_blade, short_bow])
     knoll = character_management.Character("knoll", 30, 4, 14, [sword, pike])
-    field = Field(6, 6)
+    field = Field(9, 9)
     simulation = Battle(goblin, knoll, field)
     turn = 0
     while not simulation.winner:
@@ -264,24 +272,20 @@ def run_simmulation(iterations):
 
             add_to_counter(rollout.winner_t, active_character, first_action_won, first_action_lost, rollout.first_move)
             winners[rollout.winner_t] += 1
-        select_best_action (first_action_won, first_action_lost)
-        if turn % 2 == 0:
-            simulation.character_turn(1, True, first_action_won[0])
-        else:
-            simulation.character_turn(2, True, first_action_won[0])
+        best_action = select_best_action(first_action_won, first_action_lost)
+        simulation.character_turn(active_character, True, best_action)
+        simulation.display()
         turn += 1
     print(turn)
 
     print("--- %s seconds ---" % (time.time() - start_time))
 
-def select_best_action (first_action_won, first_action_lost):
+    # def select_target(self, targets, character=None):
+    #     selected = False
+    #     while not selected:
+    #         if character == None:
+    #             selected = input(f"select target {targets.keys():  }")
+    #                 if selected in targets, keys
 
 
-def add_to_counter(winner_t, active_character, first_action_won, first_action_lost, first_move):
-    if winner_t == active_character:
-        first_action_won[first_move] += 1
-    else:
-        first_action_lost[first_move] += 1
-
-
-run_simmulation(10)
+run_simmulation(3000)
