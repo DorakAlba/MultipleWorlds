@@ -5,7 +5,7 @@ import random
 import copy
 import collections
 from battle_field import Field
-from additional_functions import display_distance, calculate_range
+from additional_functions import display_distance, calculate_range, find_next_actor
 from running_simmulations import select_best_action, add_to_counter
 from constants import RANDOM, SIMULATION
 
@@ -18,15 +18,16 @@ class Battle:
         # self.character2 = character_management.load_character(character_name2)
         self.characters = {1: [], 2: []}
         for character in team1:
+            character.alive = True
             character.team = 1
-            character.start_team_size = len(team1)
-            character.team_size = len(team1)
             self.characters[1].append(character)
         for character in team2:
+            character.alive = True
             character.team = 2
-            character.start_team_size = len(team2)
-            character.team_size = len(team2)
             self.characters[2].append(character)
+        self.team_sizes = [len(self.characters[1]), len(self.characters[2])]
+        self.starting_team_sizes = [len(self.characters[1]), len(self.characters[2])]
+
         self.battle_order = []
         for t1, t2 in zip(self.characters[1], self.characters[2]):
             self.battle_order.append(t1)
@@ -37,10 +38,6 @@ class Battle:
                 self.battle_order.extend(self.characters[1][len(self.characters[2]):])
             else:
                 self.battle_order.extend(self.characters[2][len(self.characters[1]):])
-
-        # todo delete below
-        # self.character1 = character1
-        # self.character2 = character2
 
         self.count_steps = 0
         self.winner_team = 0  # 1\2 - teams, 0 draw
@@ -68,6 +65,7 @@ class Battle:
         """
         # todo move this function somewhere else
         selected = False
+        option = [number for number in range(0, 10)]  # for simulation
         while not selected:
             new_line = line
             new_column = column
@@ -80,8 +78,11 @@ class Battle:
             4   6
             1 2 3
                 '''))
+
             else:
-                direction = random.randint(1, 9)
+                direction = random.choice(option)
+            if direction == 0:
+                return (line, column)
             if direction == direction in [7, 4, 1]:
                 new_column -= 1
             if direction == direction in [9, 6, 3]:
@@ -94,6 +95,10 @@ class Battle:
                 if self.field.place_exist(new_line, new_column):
                     if self.field.unoccupied(new_line, new_column):
                         selected = True
+                    else:
+                        option.remove(direction)
+                else:
+                    option.remove(direction)
         return (new_line, new_column)
 
     def same_direction(self, new_direction, old_direction):
@@ -144,7 +149,10 @@ class Battle:
                 # self.first_move.append(move_direction)
                 self.first_move = (move_direction)
         else:
-            move_direction = determind_action[0]
+            try:
+                move_direction = determind_action[0]
+            except TypeError as err:
+                print(err)
         self.change_position(character, move_direction)
         if not SIMULATION:
             self.field.show_field()
@@ -172,7 +180,17 @@ class Battle:
         """
         self.winner = True
 
-    def character_act(self, active_character, target, save_move=False, determined=False, determind_action=None):
+    def find_targets(self, actor):
+        enemies = []
+        allies = []
+        for character in self.battle_order:
+            if character.team != actor.team and character.alive is True:
+                enemies.append(character)
+            if character.team == actor.team and character.name != actor.name and character.alive is True:
+                allies.append(character)
+        return allies, enemies
+
+    def character_act(self, active_character, save_move=False, determined=False, determind_action=None, target=None):
         """
         Main function for character turn
         :param active_character: currently active character
@@ -181,21 +199,35 @@ class Battle:
         :return:
         """
         self.count_steps += 1
+        # searching for targets
+        friendly_characters, enemy_characters = self.find_targets(active_character)
+        # all targets
+        targets = (friendly_characters + enemy_characters)
+
         if not determined:
             if not SIMULATION:
                 print(f"{active_character.name} selecting action, he has {active_character.chp} HP")
-            range = calculate_range(active_character.position, target.position)
-            action = active_character.select_action(range)
+            # select random target
+            target_index = random.randint(0, len(targets) - 1)
+            target = targets[target_index]
+            # calculate range between target and active character
+            ### range_a = calculate_range(active_character.position, target.position)
+            # return action and it's index
+            action, attack_index = active_character.select_action()
             if save_move:
-                self.first_move = (self.first_move, action)
+                self.first_move = (self.first_move, attack_index, target_index)
+        # if actions preselected
         else:
-            action = determind_action[1]
+            target = targets[determind_action[2]]
+            selected_action = determind_action[1]
+            action, attack_index = active_character.select_action(attack_index=selected_action)
         if action:
             if action.action_in_range(calculate_range(active_character.position, target.position)):
                 action.attack(target=target, show_action=self.show_actions)
             else:
                 if not SIMULATION:
                     print(f"{active_character.name} missed! ")
+        self.check_dead(target)
 
     def end_game_display(self):
         None
@@ -207,26 +239,39 @@ class Battle:
     def display(self):
         print(self.count_steps)
         self.field.show_field()
-        print(f'{self.character1.name} {self.character1.chp} hp  vs {self.character2.name} {self.character2.chp} hp ')
+        for character in self.battle_order:
+            print(f"{character.name} has {character.chp}")
+        # print(f'{self.character1.name} {self.character1.chp} hp  vs {self.character2.name} {self.character2.chp} hp ')
+
+    def check_dead(self, character):
+        if character.chp <= 0:
+            team = character.team - 1
+            self.team_sizes[team] -= 1
+            character.alive = False
+            # self.battle_order.remove(character)
 
     def check_winner(self):
         """
         check character's current hp, if <=0, other character won
         :return:
         """
-        if self.character1.chp <= 0 and self.character2.chp <= 0:
+
+        # if self.character1.chp <= 0 and self.character2.chp <= 0:
+        if self.team_sizes[0] == 0 and self.team_sizes[1] == 0:
             if not SIMULATION:
                 print("Draw")
             self.winner_team = 0
             return self.end_battle()
-        elif self.character1.chp <= 0:
+        elif self.team_sizes[0] == 0:
+            # elif self.character1.chp <= 0:
             if not SIMULATION:
-                print("Character 2 Won!")
+                print("Team 2 Won!")
             self.winner_team = 2
             return self.end_battle()
-        elif self.character2.chp <= 0:
+        elif self.team_sizes[1] == 0:
+            # elif self.character2.chp <= 0:
             if not SIMULATION:
-                print("Character 1 Won!")
+                print("Team 1 Won!")
             self.winner_team = 1
             return self.end_battle()
 
@@ -239,9 +284,10 @@ class Battle:
         while not self.winner:
             for actor_index in range(start, len(self.battle_order)):
                 actor = self.battle_order[actor_index]
-                self.move(actor)
-                self.character_act(actor)
-            self.check_winner()
+                if actor.alive:
+                    self.move(actor)
+                    self.character_act(actor)
+                    self.check_winner()
         self.end_game_display()
 
     def character_turn(self, acting, determined=False, determined_action=None):
@@ -254,9 +300,9 @@ class Battle:
         self.last_acting = acting  # save character, that acted last
         if determined_action:
             self.show_actions = True
-        actor = self.characters[acting]
+        actor = self.battle_order[acting]
         self.move(actor, True, determined, determined_action)
-        self.character_act(actor, target, True, determined, determined_action)
+        self.character_act(actor, True, determined, determined_action)
         self.show_actions = False
         self.check_winner()
 
@@ -264,7 +310,7 @@ class Battle:
 def run_simmulation(iterations: int, team1: list, team2: list, field_size: list):
     start_time = time.time()
     player_count = len(team1) + len(team2)
-    winners = {0: 0, 1: 0, 2: 0}  # count total amount of winners
+    winners = {0: 0, 1: 0, 2: 0}  # count total amount of wins
     field = Field(field_size[0], field_size[1])
     simulation = Battle(team1, team2, field)
     turn = 0
@@ -273,14 +319,18 @@ def run_simmulation(iterations: int, team1: list, team2: list, field_size: list)
         first_action_won = collections.Counter()
         first_action_lost = collections.Counter()
         current_actor = turn % player_count  # find current acting character
+        next_actor = find_next_actor(current_actor, player_count)
         for _ in range(iterations):
             rollout = copy.deepcopy(simulation)
             rollout.character_turn(current_actor)
-            rollout.battle_active(current_actor + 1)
+            # todo fix out of index
+            rollout.battle_active(next_actor)
 
-            add_to_counter(rollout.winner_team, rollout.characters[current_actor].teams, first_action_won, first_action_lost,
-                           rollout.first_move) # giving score to next action, depending on end_game condition
+            add_to_counter(rollout.winner_team, rollout.battle_order[current_actor].team, first_action_won,
+                           first_action_lost,
+                           rollout.first_move)  # giving score to next action, depending on end_game condition
             winners[rollout.winner_team] += 1
+            # rollout.display()
         best_action = select_best_action(first_action_won, first_action_lost)
         simulation.character_turn(current_actor, True, best_action)
         simulation.display()
@@ -312,4 +362,4 @@ knoll1 = character_management.Character("knoll1", 30, 4, 14, [sword, pike])
 knoll2 = character_management.Character("knoll2", 30, 4, 14, [sword, pike])
 ### CHARACTERS ###
 
-run_simmulation(3000, [goblin1, goblin2, goblin3], [knoll2, knoll2], field_size=[4, 4])
+run_simmulation(30, [goblin1, goblin2, goblin3], [knoll1, knoll2], field_size=[4, 4])

@@ -1,2 +1,2 @@
 RANDOM = True
-SIMULATION = False
+SIMULATION = True

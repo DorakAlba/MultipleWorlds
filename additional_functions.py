@@ -21,3 +21,9 @@ def calculate_range(position: list, target: list):
         iteration += 1
     distance += (column_distance + line_distance)
     return distance
+
+def find_next_actor(current_actor, player_count):
+    if current_actor == player_count-1:
+        return 0
+    else:
+        return current_actor+1
