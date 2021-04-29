@@ -24,22 +24,43 @@ class Action:
             return False
 
 
-class Attack(Action):
-    def __init__(self, name, target, a_range, dmg_dice: str, dmg_flat: int, accuracy: int):
+class Healing(Action):
+    def __init__(self, name, target, a_range, healing_dice: str, healing_flat: int, type='Heal'):
         Action.__init__(self, name, target, a_range)
+        self.type = type
+        self.healing_dice = healing_dice
+        self.healing_flat = healing_flat
+
+    def heal(self, target, aim=None, show_action=False, wisdom=0):
+
+        healing = sum(dice.roll(self.healing_dice)) + self.healing_flat + wisdom
+        target.chp += healing
+        if target.chp > target.mhp:
+            target.chp = target.mhp
+        if not SIMULATION or show_action:
+            print(f"You heal {healing} dmg to {target.name}.")
+
+        if not SIMULATION or show_action:
+            print(f"{target.name} has {target.chp} hp")
+
+
+class Attack(Action):
+    def __init__(self, name, target, a_range, dmg_dice: str, dmg_flat: int, accuracy: int, type='Attack'):
+        Action.__init__(self, name, target, a_range)
+        self.type = type
         self.dmg_dice = dmg_dice
         self.dmg_flat = dmg_flat
         self.accuracy = accuracy
 
-    def attack(self, target, aim=None, show_action=False):
+    def attack(self, target, aim=None, show_action=False, dexterity=0):
         # roll d20 to hit
         rolled = dice.roll("1d20")[0]
-        chance_to_hit = int(((21 - (target.defs - self.accuracy)) / 20) * 100)
+        chance_to_hit = int(((21 - (target.defs - self.accuracy - dexterity)) / 20) * 100)
         if not SIMULATION or show_action:
-            print(f"Probability to hit {chance_to_hit}%")
-            print(f"{target.defs} vs {rolled} + {self.accuracy}")
+            print(f"Probability to hit with {self.name} {chance_to_hit}%")
+            print(f"defense {target.defs} vs rolled {rolled} + accuracy {self.accuracy}")
 
-        if rolled + self.accuracy >= target.defs:
+        if rolled + self.accuracy + dexterity >= target.defs:
             dmg = sum(dice.roll(self.dmg_dice)) + self.dmg_flat
             target.chp -= dmg
             if not SIMULATION or show_action:

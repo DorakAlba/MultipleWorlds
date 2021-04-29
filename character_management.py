@@ -5,16 +5,19 @@ from constants import RANDOM, SIMULATION
 
 
 class Character:
-    def __init__(self, name: str, mhp: int, atk: int, defs: int, moves: list):
+    def __init__(self, name: str, agility: int, vitality: int, dexterity: int, strength: int, moves: list):
         self.name = name
-        self.mhp = mhp
-        self.chp = mhp
-        self.atk = atk
-        self.defs = defs
+        self.agility = agility
+        self.defs = 10 + self.agility
+        self.vitality = vitality
+        self.mhp = 10 + self.vitality * 5
+        self.chp = self.mhp
+        self.dexterity = dexterity
+        self.strength = strength
         self.moves = moves
         self.position = None
 
-    def select_action(self, distance =0, attack_index = 0):
+    def select_action(self, distance=0, attack_index=0):
         selected = False
         # move_names = []
         move_names = ['wait']
@@ -23,10 +26,10 @@ class Character:
             if element.action_in_range(distance):
                 move_names.append(element.name)
                 moves_dict[element.name] = element
-        # if not move_names:
-        #     move_names.append('wait')
+            # if not move_names:
+            #     move_names.append('wait')
             while not selected:
-                if attack_index==0:
+                if attack_index == 0:
                     if not RANDOM:
                         selected_action = int(input(f"select you actions: {move_names} "))
                     else:
@@ -45,8 +48,7 @@ class Character:
                     move = moves_dict[move_names[selected_action]]
                     if not SIMULATION:
                         print(f"{self.name} using {move.name}")
-                    return move,selected_action
-
+                    return move, selected_action
 
 
 def create_character():
@@ -63,8 +65,8 @@ def create_character():
         defs = input("DEF? ")
         moves = []
 
-    new_character = Character(name, mhp, atk, defs, moves)
-    return new_character
+    # new_character = Character(name, mhp, atk, defs, moves)
+    # return new_character
 
 
 def save_character(character):
@@ -87,8 +89,8 @@ chain_blade = actions.Attack('chain_blade', 'you', 1, "4d3", 1, 2)
 sword = actions.Attack('sword', 'you', 1, "2d6", 2, 4)
 pike = actions.Attack('pike', 'you', 1, "1d12", 4, 6)
 
-goblin = Character("goblin", 20, 4, 15, [sword, chain_blade])
-gnoll = Character("gnoll", 30, 4, 14, [sword, pike])
+goblin = Character("goblin", 4, 2, 1, 1, [sword, chain_blade])
+gnoll = Character("gnoll", 4, 4, 2, 3, [sword, pike])
 # save_character(goblin)
 # save_character(gnoll)
 # gnoll.select_action()

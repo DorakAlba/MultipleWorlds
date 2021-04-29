@@ -17,6 +17,7 @@ class Battle:
         # self.character1 = character_management.load_character(character_name1)
         # self.character2 = character_management.load_character(character_name2)
         self.characters = {1: [], 2: []}
+
         for character in team1:
             character.alive = True
             character.team = 1
@@ -25,6 +26,7 @@ class Battle:
             character.alive = True
             character.team = 2
             self.characters[2].append(character)
+
         self.team_sizes = [len(self.characters[1]), len(self.characters[2])]
         self.starting_team_sizes = [len(self.characters[1]), len(self.characters[2])]
 
@@ -223,7 +225,7 @@ class Battle:
             action, attack_index = active_character.select_action(attack_index=selected_action)
         if action:
             if action.action_in_range(calculate_range(active_character.position, target.position)):
-                action.attack(target=target, show_action=self.show_actions)
+                action.attack(target=target, show_action=self.show_actions, dexterity = active_character.dexterity)
             else:
                 if not SIMULATION:
                     print(f"{active_character.name} missed! ")
@@ -248,6 +250,7 @@ class Battle:
             team = character.team - 1
             self.team_sizes[team] -= 1
             character.alive = False
+            self.clear_position(character)
             # self.battle_order.remove(character)
 
     def check_winner(self):
@@ -287,7 +290,8 @@ class Battle:
                 if actor.alive:
                     self.move(actor)
                     self.character_act(actor)
-                    self.check_winner()
+                self.check_winner()
+            start = 0
         self.end_game_display()
 
     def character_turn(self, acting, determined=False, determined_action=None):
@@ -320,20 +324,21 @@ def run_simmulation(iterations: int, team1: list, team2: list, field_size: list)
         first_action_lost = collections.Counter()
         current_actor = turn % player_count  # find current acting character
         next_actor = find_next_actor(current_actor, player_count)
-        for _ in range(iterations):
-            rollout = copy.deepcopy(simulation)
-            rollout.character_turn(current_actor)
-            # todo fix out of index
-            rollout.battle_active(next_actor)
+        if simulation.battle_order[current_actor].alive:
+            for _ in range(iterations):
+                rollout = copy.deepcopy(simulation)
+                rollout.character_turn(current_actor)
+                # todo fix out of index
+                rollout.battle_active(next_actor)
 
-            add_to_counter(rollout.winner_team, rollout.battle_order[current_actor].team, first_action_won,
-                           first_action_lost,
-                           rollout.first_move)  # giving score to next action, depending on end_game condition
-            winners[rollout.winner_team] += 1
-            # rollout.display()
-        best_action = select_best_action(first_action_won, first_action_lost)
-        simulation.character_turn(current_actor, True, best_action)
-        simulation.display()
+                add_to_counter(rollout.winner_team, rollout.battle_order[current_actor].team, first_action_won,
+                               first_action_lost,
+                               rollout.first_move)  # giving score to next action, depending on end_game condition
+                winners[rollout.winner_team] += 1
+                # rollout.display()
+            best_action = select_best_action(first_action_won, first_action_lost)
+            simulation.character_turn(current_actor, True, best_action)
+            simulation.display()
         turn += 1
     print(turn)
 
@@ -352,14 +357,15 @@ chain_blade = actions.Attack('chain blade', 'you', [2, 3], "4d3", 1, 2)
 sword = actions.Attack('sword', 'you', [0, 1], "2d6", 2, 4)
 pike = actions.Attack('pike', 'you', [0, 2], "1d12", 4, 6)
 short_bow = actions.Attack('short bow', 'you', [5, 8], "1d8", 1, -2)
+
 ### ATTACKS ###
 
 ### CHARACTERS ###
-goblin1 = character_management.Character("goblin1", 20, 4, 15, [sword, chain_blade, short_bow])
-goblin2 = character_management.Character("goblin2", 20, 4, 15, [sword, chain_blade, short_bow])
-goblin3 = character_management.Character("goblin3", 20, 4, 15, [sword, chain_blade, short_bow])
-knoll1 = character_management.Character("knoll1", 30, 4, 14, [sword, pike])
-knoll2 = character_management.Character("knoll2", 30, 4, 14, [sword, pike])
+goblin1 = character_management.Character("goblin1", 4, 2, 1, 1, [sword, chain_blade])
+goblin2 = character_management.Character("goblin2", 4, 2, 1, 1, [sword, chain_blade])
+goblin3 = character_management.Character("goblin3", 4, 2, 1, 1, [sword, chain_blade])
+knoll1 = character_management.Character("knoll1", 4, 4, 2, 3, [sword, pike])
+knoll2 = character_management.Character("knoll2", 4, 4, 2, 3, [sword, pike])
 ### CHARACTERS ###
 
-run_simmulation(30, [goblin1, goblin2, goblin3], [knoll1, knoll2], field_size=[4, 4])
+run_simmulation(15, [goblin1, goblin2, goblin3], [knoll1, knoll2], field_size=[4, 4])
