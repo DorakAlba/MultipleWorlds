@@ -25,13 +25,14 @@ class Action:
 
 
 class Healing(Action):
-    def __init__(self, name, target, a_range, healing_dice: str, healing_flat: int, type='Heal'):
+    def __init__(self, name, a_range, healing_dice: str, healing_flat: int, type='Heal', target='ally'):
         Action.__init__(self, name, target, a_range)
         self.type = type
         self.healing_dice = healing_dice
         self.healing_flat = healing_flat
+        self.target = target
 
-    def heal(self, target, aim=None, show_action=False, wisdom=0):
+    def use_action(self, target, aim=None, show_action=False, wisdom=0, dexterity=0):
 
         healing = sum(dice.roll(self.healing_dice)) + self.healing_flat + wisdom
         target.chp += healing
@@ -39,20 +40,21 @@ class Healing(Action):
             target.chp = target.mhp
         if not SIMULATION or show_action:
             print(f"You heal {healing} dmg to {target.name}.")
-
-        if not SIMULATION or show_action:
-            print(f"{target.name} has {target.chp} hp")
+            print(f"{target.name} has {target.chp} hp /{target.mhp}")
 
 
 class Attack(Action):
-    def __init__(self, name, target, a_range, dmg_dice: str, dmg_flat: int, accuracy: int, type='Attack'):
+    def __init__(self, name, a_range, dmg_dice: str, dmg_flat: int, accuracy: int, type='Attack',
+                 target='enemy'):
         Action.__init__(self, name, target, a_range)
         self.type = type
         self.dmg_dice = dmg_dice
         self.dmg_flat = dmg_flat
         self.accuracy = accuracy
+        self.target = target
+        self.a_range = a_range
 
-    def attack(self, target, aim=None, show_action=False, dexterity=0):
+    def use_action(self, target, aim=None, show_action=False, wisdom=0, dexterity=0):
         # roll d20 to hit
         rolled = dice.roll("1d20")[0]
         chance_to_hit = int(((21 - (target.defs - self.accuracy - dexterity)) / 20) * 100)

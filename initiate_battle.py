@@ -137,7 +137,7 @@ class Battle:
         character.position = new_position
         self.battle_field[new_position[0]][new_position[1]] = character
 
-    def move(self, character, return_move=False, determined=False, determind_action=None):
+    def move(self, character, return_move=False, determined=False, determined_action=None):
         """
         Character select movement, currently one square
         :param character: character that moves
@@ -152,7 +152,7 @@ class Battle:
                 self.first_move = (move_direction)
         else:
             try:
-                move_direction = determind_action[0]
+                move_direction = determined_action[0]
             except TypeError as err:
                 print(err)
         self.change_position(character, move_direction)
@@ -192,7 +192,20 @@ class Battle:
                 allies.append(character)
         return allies, enemies
 
-    def character_act(self, active_character, save_move=False, determined=False, determind_action=None, target=None):
+    def target_type(self, allies: list, enemies: list, target):
+        """
+        Identifying type of target ally\enemy
+        :param allies:
+        :param enemies:
+        :param target:
+        :return:
+        """
+        if target in enemies:
+            return 'enemy'
+        else:
+            return 'ally'
+
+    def character_act(self, active_character, save_move=False, determined=False, determined_action=None, target=None):
         """
         Main function for character turn
         :param active_character: currently active character
@@ -207,25 +220,27 @@ class Battle:
         targets = (friendly_characters + enemy_characters)
 
         if not determined:
+            target_type = None
             if not SIMULATION:
                 print(f"{active_character.name} selecting action, he has {active_character.chp} HP")
             # select random target
             target_index = random.randint(0, len(targets) - 1)
             target = targets[target_index]
+            target_type = self.target_type(friendly_characters, enemy_characters, target)
             # calculate range between target and active character
-            ### range_a = calculate_range(active_character.position, target.position)
+            range_a = calculate_range(active_character.position, target.position)
             # return action and it's index
-            action, attack_index = active_character.select_action()
+            action, attack_index = active_character.select_action(target_type, distance=range_a)
             if save_move:
                 self.first_move = (self.first_move, attack_index, target_index)
         # if actions preselected
         else:
-            target = targets[determind_action[2]]
-            selected_action = determind_action[1]
+            target = targets[determined_action[2]]
+            selected_action = determined_action[1]
             action, attack_index = active_character.select_action(attack_index=selected_action)
         if action:
             if action.action_in_range(calculate_range(active_character.position, target.position)):
-                action.attack(target=target, show_action=self.show_actions, dexterity = active_character.dexterity)
+                action.use_action(target=target, show_action=self.show_actions, dexterity=active_character.dexterity)
             else:
                 if not SIMULATION:
                     print(f"{active_character.name} missed! ")
@@ -305,8 +320,9 @@ class Battle:
         if determined_action:
             self.show_actions = True
         actor = self.battle_order[acting]
-        self.move(actor, True, determined, determined_action)
-        self.character_act(actor, True, determined, determined_action)
+        self.move(character=actor, return_move=True, determined=determined, determined_action=determined_action)
+        self.character_act(active_character=actor, save_move=True, determined=determined,
+                           determined_action=determined_action)
         self.show_actions = False
         self.check_winner()
 
@@ -326,8 +342,8 @@ def run_simmulation(iterations: int, team1: list, team2: list, field_size: list)
         next_actor = find_next_actor(current_actor, player_count)
         if simulation.battle_order[current_actor].alive:
             for _ in range(iterations):
-                rollout = copy.deepcopy(simulation)
-                rollout.character_turn(current_actor)
+                rollout = copy.deepcopy(simulation)  # create copy of simmulation
+                rollout.character_turn(current_actor)  # play out turn of active character, saving result
                 # todo fix out of index
                 rollout.battle_active(next_actor)
 
@@ -337,7 +353,7 @@ def run_simmulation(iterations: int, team1: list, team2: list, field_size: list)
                 winners[rollout.winner_team] += 1
                 # rollout.display()
             best_action = select_best_action(first_action_won, first_action_lost)
-            simulation.character_turn(current_actor, True, best_action)
+            simulation.character_turn(acting=current_actor, determined=True, determined_action=best_action)
             simulation.display()
         turn += 1
     print(turn)
@@ -353,19 +369,23 @@ def run_simmulation(iterations: int, team1: list, team2: list, field_size: list)
 
 
 ### ATTACKS ###
-chain_blade = actions.Attack('chain blade', 'you', [2, 3], "4d3", 1, 2)
-sword = actions.Attack('sword', 'you', [0, 1], "2d6", 2, 4)
-pike = actions.Attack('pike', 'you', [0, 2], "1d12", 4, 6)
-short_bow = actions.Attack('short bow', 'you', [5, 8], "1d8", 1, -2)
-
+chain_blade = actions.Attack('chain blade', [2, 3], "4d3", 1, 2)
+sword = actions.Attack('sword', [0, 1], "2d6", 2, 4)
+pike = actions.Attack('pike', [0, 2], "1d12", 4, 6)
+short_bow = actions.Attack('short bow', [5, 8], "1d8", 1, -2)
 ### ATTACKS ###
+### ACTIONS ###
+lick_wound = actions.Healing('lick wound', a_range=[0, 1], healing_dice="2d4", healing_flat=1)
+healing_bottle = actions.Healing('healing bottle', a_range=[2, 5], healing_dice="1d4", healing_flat=0)
+### ACTIONS ###
+
 
 ### CHARACTERS ###
-goblin1 = character_management.Character("goblin1", 4, 2, 1, 1, [sword, chain_blade])
-goblin2 = character_management.Character("goblin2", 4, 2, 1, 1, [sword, chain_blade])
-goblin3 = character_management.Character("goblin3", 4, 2, 1, 1, [sword, chain_blade])
-knoll1 = character_management.Character("knoll1", 4, 4, 2, 3, [sword, pike])
-knoll2 = character_management.Character("knoll2", 4, 4, 2, 3, [sword, pike])
+goblin1 = character_management.Character("goblin1", 4, 2, 1, 1, wisdom=1, moves=[sword, chain_blade, healing_bottle])
+goblin2 = character_management.Character("goblin2", 4, 2, 1, 1, wisdom=1, moves=[sword, chain_blade, healing_bottle])
+goblin3 = character_management.Character("goblin3", 4, 2, 1, 1, wisdom=1, moves=[sword, chain_blade, healing_bottle])
+knoll1 = character_management.Character("knoll1", 4, 4, 2, 3, wisdom=1, moves=[sword, pike, lick_wound])
+knoll2 = character_management.Character("knoll2", 4, 4, 2, 3, wisdom=1, moves=[sword, pike, lick_wound])
 ### CHARACTERS ###
 
-run_simmulation(15, [goblin1, goblin2, goblin3], [knoll1, knoll2], field_size=[4, 4])
+run_simmulation(30, [goblin1, goblin2, goblin3], [knoll1, knoll2], field_size=[4, 4])
