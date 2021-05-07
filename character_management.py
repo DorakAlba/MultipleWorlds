@@ -5,9 +5,10 @@ from constants import RANDOM, SIMULATION
 
 
 class Character:
-    def __init__(self, name: str, agility: int, vitality: int, dexterity: int, strength: int, wisdom: int, moves: list):
+    def __init__(self, name: str, agility: int, vitality: int, dexterity: int, strength: int, wisdom: int, intellect:int, moves: list):
         self.name = name
         self.agility = agility
+        self.intellect = intellect
         self.defs = 10 + self.agility
         self.vitality = vitality
         self.wisdom = wisdom
@@ -18,7 +19,7 @@ class Character:
         self.moves = moves
         self.position = None
 
-    def select_action(self, target_type='enemy', distance=0, attack_index=0):
+    def select_action(self, target_type='enemy', distance=0, attack_index=None):
         selected = False
         move_names = ['wait']
         moves_dict = {}
@@ -29,7 +30,7 @@ class Character:
             # if not move_names:
             #     move_names.append('wait')
         while not selected:
-            if attack_index == 0:
+            if attack_index is None:
                 if not RANDOM:
                     selected_action = int(input(f"select you actions: {move_names} "))
                 else:

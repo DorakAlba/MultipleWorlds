@@ -26,7 +26,6 @@ class Battle:
             character.alive = True
             character.team = 2
             self.characters[2].append(character)
-
         self.team_sizes = [len(self.characters[1]), len(self.characters[2])]
         self.starting_team_sizes = [len(self.characters[1]), len(self.characters[2])]
 
@@ -42,6 +41,7 @@ class Battle:
                 self.battle_order.extend(self.characters[2][len(self.characters[1]):])
 
         self.count_steps = 0
+        self.active_character = self.battle_order[(self.count_steps) % len(self.battle_order)]
         self.winner_team = 0  # 1\2 - teams, 0 draw
         self.field = field
         self.battle_field = self.field.battle_field
@@ -213,6 +213,7 @@ class Battle:
         :param target: of action
         :return:
         """
+        self.performed_actions = ""
         self.count_steps += 1
         # searching for targets
         friendly_characters, enemy_characters = self.find_targets(active_character)
@@ -235,9 +236,15 @@ class Battle:
                 self.first_move = (self.first_move, attack_index, target_index)
         # if actions preselected
         else:
-            target = targets[determined_action[2]]
             selected_action = determined_action[1]
-            action, attack_index = active_character.select_action(attack_index=selected_action)
+            target = targets[determined_action[2]]
+            target_type = self.target_type(friendly_characters, enemy_characters, target)
+            range_a = calculate_range(active_character.position, target.position)
+            action, attack_index = active_character.select_action(target_type, attack_index=selected_action, distance=range_a)
+            if action is None:
+                self.performed_actions += f" | Waited, target was {target.name} distance was {range_a}"
+            else:
+                self.performed_actions += f" | did {action.name} on {target.name} distance was {range_a}"
         if action:
             if action.action_in_range(calculate_range(active_character.position, target.position)):
                 action.use_action(target=target, show_action=self.show_actions, dexterity=active_character.dexterity)
@@ -254,12 +261,16 @@ class Battle:
     # print(f'{self.character1.name} {self.character1.chp} hp  vs {self.character2.name} {self.character2.chp} hp ')
 
     def display(self):
-        print(self.count_steps)
         self.field.show_field()
+        self.active_character = self.battle_order[(self.count_steps - 1) % len(self.battle_order)]
+        message = f"Active was {self.active_character.name} he {self.performed_actions}"
         for character in self.battle_order:
-            print(f"{character.name} has {character.chp}")
+            message += (f" | {character.name} has {character.chp} hp")
+        print(message)
+        print(self.count_steps)
+        print('##################################################################################')
         # print(f'{self.character1.name} {self.character1.chp} hp  vs {self.character2.name} {self.character2.chp} hp ')
-
+        self.performed_actions =''
     def check_dead(self, character):
         if character.chp <= 0:
             team = character.team - 1
@@ -325,67 +336,3 @@ class Battle:
                            determined_action=determined_action)
         self.show_actions = False
         self.check_winner()
-
-
-def run_simmulation(iterations: int, team1: list, team2: list, field_size: list):
-    start_time = time.time()
-    player_count = len(team1) + len(team2)
-    winners = {0: 0, 1: 0, 2: 0}  # count total amount of wins
-    field = Field(field_size[0], field_size[1])
-    simulation = Battle(team1, team2, field)
-    turn = 0
-    while not simulation.winner:
-
-        first_action_won = collections.Counter()
-        first_action_lost = collections.Counter()
-        current_actor = turn % player_count  # find current acting character
-        next_actor = find_next_actor(current_actor, player_count)
-        if simulation.battle_order[current_actor].alive:
-            for _ in range(iterations):
-                rollout = copy.deepcopy(simulation)  # create copy of simmulation
-                rollout.character_turn(current_actor)  # play out turn of active character, saving result
-                # todo fix out of index
-                rollout.battle_active(next_actor)
-
-                add_to_counter(rollout.winner_team, rollout.battle_order[current_actor].team, first_action_won,
-                               first_action_lost,
-                               rollout.first_move)  # giving score to next action, depending on end_game condition
-                winners[rollout.winner_team] += 1
-                # rollout.display()
-            best_action = select_best_action(first_action_won, first_action_lost)
-            simulation.character_turn(acting=current_actor, determined=True, determined_action=best_action)
-            simulation.display()
-        turn += 1
-    print(turn)
-
-    print("--- %s seconds ---" % (time.time() - start_time))
-
-    # def select_target(self, targets, character=None):
-    #     selected = False
-    #     while not selected:
-    #         if character == None:
-    #             selected = input(f"select target {targets.keys():  }")
-    #                 if selected in targets, keys
-
-
-### ATTACKS ###
-chain_blade = actions.Attack('chain blade', [2, 3], "4d3", 1, 2)
-sword = actions.Attack('sword', [0, 1], "2d6", 2, 4)
-pike = actions.Attack('pike', [0, 2], "1d12", 4, 6)
-short_bow = actions.Attack('short bow', [5, 8], "1d8", 1, -2)
-### ATTACKS ###
-### ACTIONS ###
-lick_wound = actions.Healing('lick wound', a_range=[0, 1], healing_dice="2d4", healing_flat=1)
-healing_bottle = actions.Healing('healing bottle', a_range=[2, 5], healing_dice="1d4", healing_flat=0)
-### ACTIONS ###
-
-
-### CHARACTERS ###
-goblin1 = character_management.Character("goblin1", 4, 2, 1, 1, wisdom=1, moves=[sword, chain_blade, healing_bottle])
-goblin2 = character_management.Character("goblin2", 4, 2, 1, 1, wisdom=1, moves=[sword, chain_blade, healing_bottle])
-goblin3 = character_management.Character("goblin3", 4, 2, 1, 1, wisdom=1, moves=[sword, chain_blade, healing_bottle])
-knoll1 = character_management.Character("knoll1", 4, 4, 2, 3, wisdom=1, moves=[sword, pike, lick_wound])
-knoll2 = character_management.Character("knoll2", 4, 4, 2, 3, wisdom=1, moves=[sword, pike, lick_wound])
-### CHARACTERS ###
-
-run_simmulation(30, [goblin1, goblin2, goblin3], [knoll1, knoll2], field_size=[4, 4])

@@ -44,9 +44,9 @@ class Field:
         for line in self.battle_field:
             for value in line:
                 if value == 0:
-                    display += (f" | {value}")
+                    display += (f" | {value} ")
                 else:
-                    display += (f" | {value.name[0]}")
+                    display += (f" | {value.name[0]}{value.name[-1]}")
             display += " | \n"
         print(display)
 
