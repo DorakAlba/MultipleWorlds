@@ -240,14 +240,16 @@ class Battle:
             target = targets[determined_action[2]]
             target_type = self.target_type(friendly_characters, enemy_characters, target)
             range_a = calculate_range(active_character.position, target.position)
-            action, attack_index = active_character.select_action(target_type, attack_index=selected_action, distance=range_a)
+            action, attack_index = active_character.select_action(target_type, attack_index=selected_action,
+                                                                  distance=range_a)
             if action is None:
                 self.performed_actions += f" | Waited, target was {target.name} distance was {range_a}"
             else:
                 self.performed_actions += f" | did {action.name} on {target.name} distance was {range_a}"
         if action:
             if action.action_in_range(calculate_range(active_character.position, target.position)):
-                action.use_action(target=target, show_action=self.show_actions, dexterity=active_character.dexterity)
+                action.use_action(target=target, acting=active_character.name, show_action=self.show_actions,
+                                  dexterity=active_character.dexterity)
             else:
                 if not SIMULATION:
                     print(f"{active_character.name} missed! ")
@@ -262,7 +264,7 @@ class Battle:
 
     def display(self):
         self.field.show_field()
-        self.active_character = self.battle_order[(self.count_steps - 1) % len(self.battle_order)]
+        self.active_character = self.battle_order[self.last_acting]
         message = f"Active was {self.active_character.name} he {self.performed_actions}"
         for character in self.battle_order:
             message += (f" | {character.name} has {character.chp} hp")
@@ -270,7 +272,8 @@ class Battle:
         print(self.count_steps)
         print('##################################################################################')
         # print(f'{self.character1.name} {self.character1.chp} hp  vs {self.character2.name} {self.character2.chp} hp ')
-        self.performed_actions =''
+        self.performed_actions = ''
+
     def check_dead(self, character):
         if character.chp <= 0:
             team = character.team - 1

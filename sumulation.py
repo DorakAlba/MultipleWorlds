@@ -3,6 +3,7 @@ import character_management
 from additional_functions import find_next_actor
 from initiate_battle import Battle
 from battle_field import Field
+from genetic_algorithm import CharacterStats
 import time
 import collections
 import copy
@@ -79,4 +80,14 @@ knoll2 = character_management.Character("knoll2", agility=4, vitality=4, dexteri
                                         moves=[pike, lick_wound])
 ### CHARACTERS ###
 
-run_simmulation(5000, [goblin1, goblin2, goblin3], [knoll1, knoll2], field_size=[8, 8])
+### GENETIC ALGORITHM ###
+
+boris_stats = CharacterStats().stat_names
+boris = character_management.Character("b", agility=boris_stats['agility'], vitality=boris_stats['vitality'],
+                                       dexterity=boris_stats['dexterity'], strength=boris_stats['strength'],
+                                       wisdom=boris_stats['wisdom'], intellect=boris_stats['intellect'],
+                                       moves=[pike, lick_wound])
+### GENETIC ALGORITHM ###
+
+
+run_simmulation(3, [goblin1, goblin2, goblin3], [knoll1, knoll2, boris], field_size=[4, 4])
