@@ -1,25 +1,49 @@
 import random as rd
 
 
+class Population:
+    def __init__(self, population_size=8, total_stats=10):
+        #todo possily replace with dictionary and safe best results
+        self.population = []
+        for creature in range(population_size):
+            self.population.append(CharacterStats(total_stats=total_stats))
+        self.new_population = []
+
+    def new_generation(self):
+        self.population = self.new_population
+        self.new_population = []
+
+    def define_pairs(self):
+        pass
+
+    def crossover(self, creature1, creature2):
+        #todo crossover
+        child1.mutate_stats
+        child2.mutate_stats
+        self.new_population.extend([child1, child2])
+
+
 class CharacterStats:
     def __init__(self, agility: int = 1, vitality: int = 1, dexterity: int = 1, strength: int = 1,
                  wisdom: int = 1,
-                 intellect: int = 1, total_stats=13):
+                 intellect: int = 1, total_stats=10):
         self.total_stats = total_stats
-        self.agility = agility
-        self.vitality = vitality
-        self.dexterity = dexterity
-        self.strength = strength
-        self.wisdom = wisdom
-        self.intellect = intellect
         self.stat_names = {'agility': agility, 'vitality': vitality, 'dexterity': dexterity, 'strength': strength,
                            'wisdom': wisdom, 'intellect': intellect}
         self.calc_allocated_stats()
         self.randomly_distribute_stats()
+        self.score = None
 
     def select_random_stat(self):
         random_stat = rd.choice(list(self.stat_names))
         return random_stat
+
+    def mutate_stats(self, child, threshold=0.7):
+        """increase one stat and decrease other stat, with some threshold"""
+        if rd.random() > threshold:
+            keys = rd.sample(child.key(), 2)
+            child[keys[0]] += 1
+            child[keys[1]] -= 1
 
     def change_random_stat(self, increase=True):
         stat_to_raise = self.select_random_stat()
@@ -30,6 +54,7 @@ class CharacterStats:
         self.calc_allocated_stats()
 
     def randomly_distribute_stats(self):
+        """distribute excessive free stats, or take away random stats"""
         while self.free_stats > 0:
             self.change_random_stat(increase=True)
         while self.free_stats < 0:
@@ -39,6 +64,7 @@ class CharacterStats:
         self.free_stats = self.total_stats - self.calc_stat_sum()
 
     def calc_stat_sum(self):
+        """Calcukate how many free stats available"""
         stat_sum = 0
         for key in self.stat_names:
             stat_sum += self.stat_names[key]
@@ -49,20 +75,12 @@ class CharacterStats:
         displaying all stats of character
         :return:
         """
-        print(self.total_stats,
-              self.agility,
-              self.vitality,
-              self.dexterity,
-              self.strength,
-              self.wisdom,
-              self.intellect, )
+        print(self.stat_names)
 
 
-stats = CharacterStats()
-print(stats.stat_names)
-stats.randomly_distribute_stats()
-print(stats.stat_names)
-
+pop = Population(total_stats=100)
+for char in pop.population:
+    char.display_stats()
 #
 #     stats = [strength, dexterity, vitality, agility]
 #     for g in range(total):
