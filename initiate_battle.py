@@ -1,12 +1,13 @@
 import character_management
 import actions
 import time
+import sys
 import random
 import copy
 import collections
 from battle_field import Field
 from additional_functions import display_distance, calculate_range, find_next_actor
-from running_simmulations import select_best_action, add_to_counter
+from action_evaluation import select_best_action, add_to_counter
 from constants import RANDOM, SIMULATION
 
 
@@ -45,6 +46,7 @@ class Battle:
         self.winner_team = 0  # 1\2 - teams, 0 draw
         self.field = field
         self.battle_field = self.field.battle_field
+        self.determined_action = None
         for team in self.characters.values():
             for character in team:
                 self.place_character(character)
@@ -137,7 +139,7 @@ class Battle:
         character.position = new_position
         self.battle_field[new_position[0]][new_position[1]] = character
 
-    def move(self, character, return_move=False, determined=False, determined_action=None):
+    def move(self, character, return_move=False, determined=False):
         """
         Character select movement, currently one square
         :param character: character that moves
@@ -152,7 +154,7 @@ class Battle:
                 self.first_move = (move_direction)
         else:
             try:
-                move_direction = determined_action[0]
+                move_direction = self.determined_action.pop(0)
             except TypeError as err:
                 print(err)
         self.change_position(character, move_direction)
@@ -181,6 +183,27 @@ class Battle:
         :return: True
         """
         self.winner = True
+        self.end_battle_score()
+
+    def end_battle_score(self):
+        self.score = 0
+        winner_index = self.winner_team - 1
+        hp_score = 0
+        for character in self.characters[self.winner_team]:
+            hp_score += max(0, character.chp) / character.mhp
+        hp_score /= self.starting_team_sizes[winner_index]
+        team_size_score = self.team_sizes[winner_index] / self.starting_team_sizes[winner_index]
+        winner_bonus_score = 0.3
+        if self.active_character.team == self.winner_team:
+            turn_score = 1 / (self.count_steps - 10)
+            self.score += winner_bonus_score + team_size_score * 0.35 + hp_score * 0.35 + turn_score * 0.1
+        else:
+            self.score += team_size_score * 0.45 + hp_score * 0.45
+        self.score = round(self.score, 2)
+        if self.score > 1.1 or self.score < 0:
+            print(f"Error:{self.score} value not normal end_game_score\n")
+            sys.exit(1)
+        pass
 
     def find_targets(self, actor):
         enemies = []
@@ -205,7 +228,7 @@ class Battle:
         else:
             return 'ally'
 
-    def character_act(self, active_character, save_move=False, determined=False, determined_action=None, target=None):
+    def character_act(self, active_character, save_move=False, determined=False, target=None):
         """
         Main function for character turn
         :param active_character: currently active character
@@ -236,8 +259,11 @@ class Battle:
                 self.first_move = (self.first_move, attack_index, target_index)
         # if actions preselected
         else:
-            selected_action = determined_action[1]
-            target = targets[determined_action[2]]
+            action = self.determined_action.pop(0)
+            target = self.determined_action.pop(0)
+
+            selected_action = action
+            target = targets[target]
             target_type = self.target_type(friendly_characters, enemy_characters, target)
             range_a = calculate_range(active_character.position, target.position)
             action, attack_index = active_character.select_action(target_type, attack_index=selected_action,
@@ -264,7 +290,8 @@ class Battle:
 
     def display(self):
         self.field.show_field()
-        self.active_character = self.battle_order[self.last_acting]
+        # self.active_character = self.battle_order[self.last_acting]
+
         message = f"Active was {self.active_character.name} he {self.performed_actions}"
         for character in self.battle_order:
             message += (f" | {character.name} has {character.chp} hp")
@@ -324,18 +351,20 @@ class Battle:
         self.end_game_display()
 
     def character_turn(self, acting, determined=False, determined_action=None):
-        """function that take's planned actions and execute them
+        """ Perform Actions for first character in current rollout or determined actions in simulation
+        function that take's planned actions and execute them
         :param acting: number of character that acting
         :param determined:
-        :param determined_action:
-        :return:
+        :param determined_action: set tha defining actions
         """
-        self.last_acting = acting  # save character, that acted last
+        self.active_character = self.battle_order[acting]  # character that started simulation
+        # self.none = None
         if determined_action:
             self.show_actions = True
+            self.determined_action = determined_action
         actor = self.battle_order[acting]
-        self.move(character=actor, return_move=True, determined=determined, determined_action=determined_action)
-        self.character_act(active_character=actor, save_move=True, determined=determined,
-                           determined_action=determined_action)
+        self.move(character=actor, return_move=True, determined=determined)
+        self.character_act(active_character=actor, save_move=True, determined=determined)
         self.show_actions = False
+        self.determined_action = None
         self.check_winner()
