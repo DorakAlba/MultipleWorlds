@@ -61,7 +61,6 @@ class Simulation:
                 simulation.display()
                 # todo return score
             turn += 1
-        print(turn)
 
         print("--- %s seconds ---" % (time.time() - start_time))
 
