@@ -198,10 +198,10 @@ class Battle:
             turn_score = 1 / (self.count_steps - 10)
             self.score += winner_bonus_score + team_size_score * 0.35 + hp_score * 0.35 + turn_score * 0.1
         else:
-            self.score += team_size_score * 0.45 + hp_score * 0.45
+            self.score += (1 - team_size_score) * 0.55 + (1 - hp_score) * 0.25
         self.score = round(self.score, 2)
         if self.score > 1.1 or self.score < 0:
-            print(f"Error:{self.score} value not normal end_game_score\n")
+            print(f"Error:{self.score} value not normal end_game_score {self.score}\n")
             sys.exit(1)
         pass
 

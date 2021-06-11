@@ -62,7 +62,17 @@ class Simulation:
                 # todo return score
             turn += 1
 
+        print(simulation.score)
         print("--- %s seconds ---" % (time.time() - start_time))
+
+class Experiment:
+    def __init__(self):
+        self.trial = []
+        self.warriors = []
+        self.healers = []
+        self.dmgdealers = []
+
+    def build_teams:
 
 
 ### ATTACKS ###
@@ -107,4 +117,4 @@ boris = character_management.Character("b", agility=boris_stats['agility'], vita
 
 
 sim = Simulation(10, 100)
-sim.run_simulation([goblin1, goblin2, goblin3], [knoll1, knoll_mini], field_size=[3, 3])
+sim.run_simulation([goblin1, goblin2, goblin3], [knoll1, knoll_mini], field_size=[5, 5])
